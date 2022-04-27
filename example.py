@@ -1,4 +1,5 @@
-from ecs import Component, Scene
+from ecs import Component, GameObject, Scene, SceneManager
+from pymunk import Space
 
 class Vector(Component):
     def __init__(self, x, y):
@@ -14,34 +15,48 @@ class Move(Component):
         super().__init__()
     
     def start(self):
-        self.posComponent : Vector = Scene.getComponent(self.id, Vector)
+        self.position : Vector = SceneManager.get_component_current_scene(self.gameobject_id, Vector)
 
     def update(self):
-        print(self.posComponent)
-        self.posComponent.x += 1
-        self.posComponent.y += 1
+        self.position[0] += 1
+        self.position[1] += 1
 
 # Example:
-sceneA = Scene()
-sceneA.addGameObject([Vector(10, 5), Move()])
 
-sceneB = Scene()
-gameObjectID = sceneB.addGameObject([Vector(0, 0), Move()])
-sceneB.addGameObject([Vector(0, 10), Move()]) 
+gameobject_a = GameObject([
+    Vector(10, 5),
+    Move()
+])
+
+scene_a = Scene(Space())
+scene_a.add_gameobject(gameobject_a)
+
+scene_b = Scene(Space())
+
+gameobject_b = GameObject([
+    Vector(0, 5),
+    Move()
+])
+
+gameobject_c = GameObject([
+    Vector(0, 10),
+    Move()
+])
+
+scene_b.add_gameobject(gameobject_b)
+scene_b.add_gameobject(gameobject_c) 
 
 print("Runing Scene A")
 # run sceneA (by default, first scene added)
-Scene.startCurrentScene()
+SceneManager.start_current_scene()
 for _ in range(0, 5):
-    Scene.updateCurrentScene()
+    SceneManager.update_current_scene(0.16)
 
 
-
-Scene.setLoadScene(sceneB)
-Scene.removeGameObjectCurrentScene(gameObjectID)
+SceneManager.set_current_scene(scene_b)
 
 print("Runing Scene B")
 # run sceneB
-sceneB.start()
+SceneManager.start_current_scene()
 for _ in range(0, 5):
-    sceneB.update()
+    SceneManager.update_current_scene(0.16)
