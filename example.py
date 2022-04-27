@@ -17,9 +17,9 @@ class Move(Component):
     def start(self):
         self.position : Vector = SceneManager.get_component_current_scene(self.gameobject_id, Vector)
 
-    def update(self):
-        self.position[0] += 1
-        self.position[1] += 1
+    def update(self, delta_time):
+        self.position.x += 1
+        self.position.y += 1
 
 # Example:
 
@@ -30,6 +30,7 @@ gameobject_a = GameObject([
 
 scene_a = Scene(Space())
 scene_a.add_gameobject(gameobject_a)
+SceneManager.set_current_scene(scene_a)
 
 scene_b = Scene(Space())
 
