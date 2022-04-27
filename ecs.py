@@ -1,7 +1,15 @@
+from pymunk import Space
+import extra
+
+CURRENT_CLASS = 0
+BASE_CLASS = 1
+
+NO_ERROR = 0
+ITEM_NOT_FOUND = 1
 
 class Component:
     def __init__(self):
-        self.id = 0
+        self.gameobject_id = 0
 
     def awake(self):
         pass
@@ -9,176 +17,256 @@ class Component:
     def start(self):
         pass
 
-    def update(self, deltaTime, *args):
+    def update(self, delta_time, *args):
         pass
 
-    def onEvent(self, deltaTime, event):
+    def on_event(self, delta_time, event):
         pass
 
-    def onKeyPressed(self, deltaTime, onKeyPressed):
+    def on_key_pressed(self, delta_time, on_key_pressed):
         pass
 
-GameObject = dict[type : Component]
-KNOWN_ID = 0
+    def __repr__(self) -> str:
+        return type(self).__name__
 
-def components_to_gameObject(id, components : list[Component]) -> GameObject:
-    gameObject : GameObject = {}
-    for component in components:
-        component.id = id
-        gameObject.update({type(component) : component})   
-    return gameObject
+def component_less_then(component_instance, component_type):
+    return type(component_instance).__name__ < component_type.__name__
+
+def component_greater_then(component_instance, component_type):
+    return type(component_instance).__name__ > component_type.__name__
+
+class GameObject:
+    def __init__(self, components_instances):
+        self._components : list[Component] = []
+        for component in components_instances:
+            self.add_component(component)
+
+    def awake(self):
+        for component in self._components:
+            component.awake()
+
+    def start(self):
+        for component in self._components:
+            component.start()
+
+    def update(self, delta_time, *args):
+        for component in self._components:
+            component.update(delta_time, *args)
+
+    def on_event(self, delta_time, event):
+        for component in self._components:
+            component.on_event(delta_time, event)
+
+    def on_key_pressed(self, delta_time, on_key_pressed):
+        for component in self._components:
+            component.on_key_pressed(delta_time, on_key_pressed)    
+
+    def add_component(self, component_instance : Component):
+        extra.insert_type(self._components, component_instance, type(component_instance), component_less_then, component_greater_then)
+        component_instance.gameobject_id = id(self)
+
+    def _get_component_index(self, component_type : Component):
+        index = extra.search(self._components, component_type, component_less_then, component_greater_then)
+        if index < len(self._components) and isinstance(self._components[index], component_type):
+            return index, NO_ERROR
+        else:
+            return index, ITEM_NOT_FOUND
+
+    def get_component(self, component_type : Component):
+        index, error = self._get_component_index(component_type)
+        if error == NO_ERROR:
+            return self._components[index], NO_ERROR
+        else:
+            return None, ITEM_NOT_FOUND
+
+    def has_component(self, component_type : Component) -> bool:
+        index, error = self._get_component_index(component_type)
+        return error == NO_ERROR
+
+    def ensure_component(self, component_type : Component):
+        index, error = self._get_component_index(component_type)
+        if error == ITEM_NOT_FOUND:
+            self.add_component(component_type)
+        return self.get_component(component_type)
+    
+    def remove_component(self, component_type : Component) -> int:
+        index, error = self._get_component_index(component_type)
+        if error == NO_ERROR:
+            del self._components[index]
+        return error
+
+    def __repr__(self) -> str:
+        text = ""
+        for component in self._components:
+            text += str(component) + "-"
+        return text
+
+def gameobject_less_then(gameobject_a : GameObject, gameobject_b : GameObject):
+    return id(gameobject_a) < id(gameobject_b)
+
+def gameobject_greater_then(gameobject_a : GameObject, gameobject_b : GameObject):
+    return id(gameobject_a) > id(gameobject_b) 
+
+def gameobject_id_less_then(gameobject_a : GameObject, gameobject_id : int):
+    return id(gameobject_a) < gameobject_id
+
+def gameobject_id_greater_then(gameobject_a : GameObject, gameobject_id : int):
+    return id(gameobject_a) > gameobject_id
 
 class Scene:
-    _current_loaded_scene_id : int = 0
-    _next_scene_id : int = 0
-    _all_scenes : dict = {}
-    def __init__(self):
-        self.nextGameobjectID = 0
-        self.sceneID = Scene._next_scene_id
-        Scene._all_scenes.update({self.sceneID : {} })
-        self.addGameObject([])
-        Scene._next_scene_id += 1
+    def __init__(self, space):
+        self._gameobjects : list[GameObject] = []
+        self._known : GameObject = GameObject([])
+        self.space : Space = space
 
-    def addKnownGlobal(sceneID : int, component : Component):
-        Scene.addComponentGlobal(sceneID, KNOWN_ID, component)
+    def awake(self):
+        for gameobject in self._gameobjects:
+            gameobject.awake()
 
-    def addKnownCurrentScene(component : Component):
-        Scene.addKnownGlobal(Scene._current_loaded_scene_id, component)
+    def start(self):
+        for gameobject in self._gameobjects:
+            gameobject.start()
 
-    def addKnown(self, component : Component):
-        Scene.addKnownGlobal(self.sceneID, component)
+    def update(self, delta_time, *args):
+        for gameobject in self._gameobjects:
+            gameobject.update(delta_time, *args)
 
-    def getKnownGlobal(sceneID : int, component : Component):
-        return Scene.getComponentGlobal(sceneID, KNOWN_ID, component)
+    def on_event(self, delta_time, event):
+        for gameobject in self._gameobjects:
+            gameobject.on_event(delta_time, event)
 
-    def getKnownCurrentScene(component : Component):
-        return Scene.getKnownGlobal(Scene._current_loaded_scene_id, component)
+    def on_key_pressed(self, delta_time, on_key_pressed):
+        for gameobject in self._gameobjects:
+            gameobject.on_key_pressed(delta_time, on_key_pressed)    
 
-    def getKnown(self, component : Component):
-        return Scene.getKnownGlobal(self.sceneID, component)
+    def add_known(self, component_instance : Component):
+        self._known.add_component(component_instance)
 
-    def addGameObjectGlobal(sceneID : int, gameObject : list[Component]) -> int:
-        nextGameobjectID = 0
-        if (len(Scene._all_scenes[sceneID]) > 0):
-            nextGameobjectID = list(Scene._all_scenes[sceneID].keys())[-1] + 1
-        Scene._all_scenes[sceneID].update({
-            nextGameobjectID : components_to_gameObject(nextGameobjectID, gameObject)
-        })
-        for component in gameObject: component.awake()
-        for component in gameObject: component.start()
-        return nextGameobjectID
+    def get_known(self, component_type : Component):
+        return self._known.get_component(component_type)
 
-    def addGameObjectCurrentScene(gameObject : list[Component]):
-        return Scene.addGameObjectGlobal(Scene._current_loaded_scene_id, gameObject)
+    def add_gameobject(self, gameobject : GameObject):
+        extra.insert(self._gameobjects, gameobject, gameobject_less_then, gameobject_greater_then)
 
-    def addGameObject(self, gameObject : list[Component]):
-        return  Scene.addGameObjectGlobal(self.sceneID, gameObject)
+    def remove_gameobject(self, gameobject : GameObject):
+        index, error = self._find_gameobject_index(gameobject)
+        if error == NO_ERROR:
+            del self._gameobjects[index]
+        return error
 
-    def removeGameObjectGlobal(sceneID : int, gameObjectID : int):
-        scene : dict = Scene._all_scenes[sceneID]
-        scene.pop(gameObjectID, None)
+    def has_gameobject(self, gameobject : GameObject):
+        index, error = self._find_gameobject_index(gameobject)
+        return error == NO_ERROR
 
-    def removeGameObjectCurrentScene(gameObjectID : int):
-        Scene.removeGameObjectGlobal(Scene._current_loaded_scene_id, gameObjectID)
+    def _find_gameobject_index(self, gameobject : GameObject):
+        index = extra.search(self._gameobjects, gameobject, gameobject_less_then, gameobject_greater_then)
+        if index < len(self._gameobjects) and self._gameobjects[index] == gameobject:
+            return index, NO_ERROR
+        else:
+            return -1, ITEM_NOT_FOUND
 
-    def removeGameObject(self, gameObjectID : int):
-        Scene.removeGameObjectGlobal(self.sceneID, gameObjectID)
+    def get_gameobject_by_index(self, gameobject_index : int):
+        if gameobject_index >= 0 and gameobject_index < len(self._gameobjects):
+            return self._gameobjects[gameobject_index], NO_ERROR
+        else:
+            return None, ITEM_NOT_FOUND
+    
+    def find_gameobject_by_id(self, gameobject_id : int):
+        index = extra.search(self._gameobjects, gameobject_id, gameobject_id_less_then, gameobject_id_greater_then)
+        if index < len(self._gameobjects) and id(self._gameobjects[index]) == gameobject_id:
+            return index, NO_ERROR
+        else:
+            return None, ITEM_NOT_FOUND
 
-    def addComponentGlobal(sceneID : int, gameObjectID : int, componentInstance : Component):
-        gameObject = Scene._all_scenes[sceneID][gameObjectID]
-        gameObject.update({type(componentInstance) : componentInstance})      
 
-    def addComponentCurrentScene(gameObjectID : int, componentInstance : Component):
-        Scene.addComponentGlobal(Scene._current_loaded_scene_id, gameObjectID, componentInstance)
+def scene_less_then(scene_a : Scene, scene_b : Scene):
+    return id(scene_a) < id(scene_b)
 
-    def addComponent(self, gameObjectID : int, componentInstance : Component):
-        Scene.addComponentGlobal(self.sceneID, gameObjectID, componentInstance)
+def scene_greater_then(scene_a : Scene, scene_b : Scene):
+    return id(scene_a) > id(scene_b)
 
-    def ensureComponentGlobal(sceneID : int, gameObjectID : int, componentInstance : Component):
-        if not Scene.hasComponentGlobal(sceneID, gameObjectID, componentInstance):
-            Scene.addComponentGlobal(sceneID, gameObjectID, componentInstance)
-        return Scene.getComponentGlobal(sceneID, gameObjectID, componentInstance)
+class SceneManager:
+    _current_loaded_scene : Scene = None
+    _all_scenes : list[Scene] = []
 
-    def ensureComponentCurrentScene(gameObjectID : int, componentInstance : Component):
-        Scene.ensureComponentGlobal(Scene._current_loaded_scene_id, gameObjectID, componentInstance)
+    def get_component_current_scene(gameobject_id : int, component_type : Component):
+        component : Component = None
+        current_scene : Scene = SceneManager._current_loaded_scene
+        index, error = current_scene.find_gameobject_by_id(gameobject_id)
+        if error == NO_ERROR:
+            gameobject, error = current_scene.get_gameobject_by_index(index)
+            if error == NO_ERROR:
+                component, error = gameobject.get_component(component_type)
+                if error == ITEM_NOT_FOUND:
+                    raise Exception(f"component {component_type} doesnt exist in gameobject {gameobject}")
+            else:
+                raise Exception(f"gameobject of index {index} doesnt exist in scene {current_scene}")
+        else:
+            raise Exception(f"gameobject of id {gameobject_id} doesnt exist in scene {current_scene}")
 
-    def ensureComponent(self, gameObjectID : int, componentInstance : Component):
-        Scene.ensureComponentGlobal(self.sceneID, gameObjectID, componentInstance)
+        return component
+    
+    def get_known_current_scene(component_type : Component):
+        current_scene : Scene = SceneManager._current_loaded_scene
+        component, error = current_scene.get_known(component_type)
+        if error == ITEM_NOT_FOUND:
+            raise Exception(f"component {component_type} doesnt exist on known in scene {current_scene}")
+        return component
 
-    def hasComponentGlobal(sceneID : int, gameObjectID : int, componentInstance : Component):
-        return componentInstance in Scene._all_scenes[sceneID][gameObjectID]
+    def _find_scene_index(scene : Scene):
+        index = extra.search(SceneManager._all_scenes, scene, scene_less_then, scene_greater_then)
+        if index < len(SceneManager._all_scenes) and SceneManager._all_scenes[index] == scene:
+            return index, NO_ERROR
+        else:
+            return -1, ITEM_NOT_FOUND
 
-    def hasComponentCurrentScene(gameObjectID : int, componentInstance : Component):
-        return componentInstance in Scene._all_scenes[Scene._current_loaded_scene_id][gameObjectID]
-
-    def hasComponent(self, gameObjectID : int, componentInstance : Component):
-        return componentInstance in Scene._all_scenes[self.sceneID][gameObjectID]
-
-    def getComponentGlobal(sceneID : int, gameObjectID : int, type : type) -> Component:
-        return Scene._all_scenes[sceneID][gameObjectID][type]
-
-    def getComponentCurrentScene(gameObjectID : int, type : type):
-        return Scene.getComponentGlobal(Scene._current_loaded_scene_id, gameObjectID, type) 
-
-    def getComponent(self, gameObjectID : int, type : type):
-        return Scene.getComponentGlobal(self.sceneID, gameObjectID,type)
-
-    def setLoadScene(scene : 'Scene'):
-        Scene._current_loaded_scene_id = scene.sceneID
+    def set_current_scene(scene : Scene):
+        SceneManager._current_loaded_scene = scene
         scene.awake()
         scene.start()
 
-    def awakeGlobal(sceneID : int):
-        for gameObject in list(Scene._all_scenes[sceneID].values()): 
-            for component in gameObject.values():
+    def awake_global(scene : Scene):
+        for gameobject in scene._gameobjects: 
+            for component in gameobject._components:
                 component.awake()
 
-    def awakeCurrentScene():
-        Scene.awakeGlobal(Scene._current_loaded_scene_id)
+    def awake_current_scene():
+        SceneManager.awake_global(SceneManager._current_loaded_scene)
 
-    def awake(self):
-        Scene.awakeGlobal(self.sceneID)
-
-    def startGlobal(sceneID : int):
-        for gameObject in list(Scene._all_scenes[sceneID].values()):
-            for component in gameObject.values():
+    def start_global(scene : Scene):
+        for gameobject in scene._gameobjects:
+            for component in gameobject._components:
                 component.start()        
 
-    def startCurrentScene():
-        Scene.startGlobal(Scene._current_loaded_scene_id)
-
-    def start(self):
-        Scene.startGlobal(self.sceneID)
+    def start_current_scene():
+        SceneManager.start_global(SceneManager._current_loaded_scene)
     
-    def updateGlobal(sceneID : int, deltaTime : float, *args):
-        for gameObject in list(Scene._all_scenes[sceneID].values()):
-            for component in gameObject.values():
-                component.update(deltaTime, *args)       
+    def update_global(scene : Scene, delta_time : float, *args):
+        for gameobject in scene._gameobjects:
+            for component in gameobject._components:
+                component.update(delta_time, *args)       
 
-    def updateCurrentScene(deltaTime : float, *args):
-        Scene.updateGlobal(Scene._current_loaded_scene_id, deltaTime, *args)
+    def update_current_scene(delta_time : float, *args):
+        SceneManager.update_global(SceneManager._current_loaded_scene, delta_time, *args)
 
-    def update(self, deltaTime : float, *args):
-        Scene.updateGlobal(self.sceneID, deltaTime, *args)
+    def update_space_global(scene : Scene, delta_time : float):
+        scene.space.step(delta_time)
 
-    def invokeEventGlobal(sceneID : int, deltaTime, event):
-        for gameObject in list(Scene._all_scenes[sceneID].values()):
-            for component in gameObject.values():
-                component.onEvent(deltaTime, event) 
+    def update_space_current_scene(delta_time : float):
+        SceneManager.update_space_global(SceneManager._current_loaded_scene, delta_time)
 
-    def invokeEventCurrentScene(deltaTime : float, event):
-        Scene.invokeEventGlobal(Scene._current_loaded_scene_id, deltaTime, event)
+    def invoke_event_global(scene : Scene, delta_time : float, event):
+        for gameobject in scene._gameobjects:
+            for component in gameobject._components:
+                component.on_event(delta_time, event) 
 
-    def invokeEvent(self, deltaTime : float, event):
-        Scene.invokeEventGlobal(self.sceneID, deltaTime, event)
+    def invoke_event_current_scene(delta_time : float, event):
+        SceneManager.invoke_event_global(SceneManager._current_loaded_scene, delta_time, event)
     
-    def invokeKeyPressedGlobal(sceneID : int, deltaTime : float, keyPressed : list):
-        for gameObject in list(Scene._all_scenes[sceneID].values()):
-            for component in gameObject.values():
-                component.onKeyPressed(deltaTime, keyPressed)
+    def invoke_key_pressed_global(scene : Scene, delta_time : float, key_pressed : list):
+        for gameobject in scene._gameobjects:
+            for component in gameobject._components:
+                component.on_key_pressed(delta_time, key_pressed)
 
-    def invokeKeyPressedCurrentScene(deltaTime : float, keyPressed : list):
-        Scene.invokeKeyPressedGlobal(Scene._current_loaded_scene_id, deltaTime, keyPressed)
-    
-    def invokeKeyPressed(self, deltaTime : float, keyPressed : list):
-        Scene.invokeKeyPressedGlobal(self.sceneID, deltaTime, keyPressed)
+    def invoke_key_pressed_current_scene(delta_time : float, key_pressed : list):
+        SceneManager.invoke_key_pressed_global(SceneManager._current_loaded_scene, delta_time, key_pressed)
