@@ -1,4 +1,4 @@
-from scene import *
+from src.scene import *
 
 class SceneManager:
     _current_loaded_scene : Scene = None
@@ -51,36 +51,33 @@ class SceneManager:
 
     def _find_scene_index(scene : Scene):
         index = extra.search(SceneManager._all_scenes, scene, scene_less_then, scene_greater_then)
+        error = NO_ERROR
         if index < len(SceneManager._all_scenes) and SceneManager._all_scenes[index] == scene:
-            return index, NO_ERROR
-        else:
-            return -1, ITEM_NOT_FOUND
+            error = ITEM_NOT_FOUND    
+        return index, error
 
     def set_current_scene(scene : Scene):
         SceneManager._current_loaded_scene = scene
         scene.awake()
         scene.start()
 
+    def add_current_scene(scene : Scene):
+        SceneManager._all_scenes.append(scene)
+
     def awake_global(scene : Scene):
-        for gameobject in scene._gameobjects: 
-            for component in gameobject._components:
-                component.awake()
+        scene.awake()
 
     def awake_current_scene():
         SceneManager.awake_global(SceneManager._current_loaded_scene)
 
     def start_global(scene : Scene):
-        for gameobject in scene._gameobjects:
-            for component in gameobject._components:
-                component.start()        
+        scene.start()
 
     def start_current_scene():
         SceneManager.start_global(SceneManager._current_loaded_scene)
     
     def update_global(scene : Scene, delta_time : float, *args):
-        for gameobject in scene._gameobjects:
-            for component in gameobject._components:
-                component.update(delta_time, *args)       
+        scene.update(delta_time, *args)   
 
     def update_current_scene(delta_time : float, *args):
         SceneManager.update_global(SceneManager._current_loaded_scene, delta_time, *args)
@@ -92,17 +89,13 @@ class SceneManager:
         SceneManager.update_space_global(SceneManager._current_loaded_scene, delta_time)
 
     def invoke_event_global(scene : Scene, delta_time : float, event):
-        for gameobject in scene._gameobjects:
-            for component in gameobject._components:
-                component.on_event(delta_time, event) 
+        scene.on_event(delta_time, event)
 
     def invoke_event_current_scene(delta_time : float, event):
         SceneManager.invoke_event_global(SceneManager._current_loaded_scene, delta_time, event)
     
     def invoke_key_pressed_global(scene : Scene, delta_time : float, key_pressed : list):
-        for gameobject in scene._gameobjects:
-            for component in gameobject._components:
-                component.on_key_pressed(delta_time, key_pressed)
+        scene.on_key_pressed(delta_time, key_pressed)
 
     def invoke_key_pressed_current_scene(delta_time : float, key_pressed : list):
         SceneManager.invoke_key_pressed_global(SceneManager._current_loaded_scene, delta_time, key_pressed)

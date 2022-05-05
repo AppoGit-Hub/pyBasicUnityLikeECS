@@ -1,6 +1,6 @@
-import extra
-from component import *
-from constant import *
+import src.extra as extra
+from src.component import *
+from src.constant import *
 
 class GameObject:
     def __init__(self, components_instances):
@@ -34,17 +34,17 @@ class GameObject:
 
     def _get_component_index(self, component_type : Component):
         index = extra.search(self._components, component_type, component_less_then, component_greater_then)
+        error = NO_ERROR
         if index < len(self._components) and isinstance(self._components[index], component_type):
-            return index, NO_ERROR
-        else:
-            return index, ITEM_NOT_FOUND
+            error = ITEM_NOT_FOUND
+        return index, error
 
     def get_component(self, component_type : Component):
         index, error = self._get_component_index(component_type)
+        component = None
         if error == NO_ERROR:
-            return self._components[index], NO_ERROR
-        else:
-            return None, ITEM_NOT_FOUND
+            component = self._components[index]
+        return component, error
 
     def has_component(self, component_type : Component) -> bool:
         index, error = self._get_component_index(component_type)
@@ -54,7 +54,6 @@ class GameObject:
         index, error = self._get_component_index(component_type)
         if error == ITEM_NOT_FOUND:
             self.add_component(component_type)
-            
         return self.get_component(component_type)
     
     def remove_component(self, component_type : Component) -> int:
@@ -64,7 +63,7 @@ class GameObject:
         return error
 
     def __repr__(self) -> str:
-        text = ""
+        text = f"{id(self)}:"
         for component in self._components:
             text += str(component) + "-"
         return text

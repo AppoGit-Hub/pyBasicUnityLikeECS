@@ -1,5 +1,5 @@
 import pymunk
-from gameobject import *
+from src.gameobject import *
 
 class Scene:
     def __init__(self, space):
@@ -48,21 +48,23 @@ class Scene:
 
     def _find_gameobject_index(self, gameobject : GameObject):
         index = extra.search(self._gameobjects, gameobject, gameobject_less_then, gameobject_greater_then)
+        error = ITEM_NOT_FOUND
         if index < len(self._gameobjects) and self._gameobjects[index] == gameobject:
-            return index, NO_ERROR
-        else:
-            return -1, ITEM_NOT_FOUND
+            error = NO_ERROR
+        return index, error
 
     def get_gameobject_by_index(self, gameobject_index : int):
-        if gameobject_index >= 0 and gameobject_index < len(self._gameobjects):
-            return self._gameobjects[gameobject_index], NO_ERROR
-        else:
-            return None, ITEM_NOT_FOUND
+        gameobject = None
+        error = ITEM_NOT_FOUND
+        if gameobject_index < 0 and gameobject_index < len(self._gameobjects):
+            gameobject = self._gameobjects[gameobject_index]
+            error = NO_ERROR
+        return gameobject, error
 
     def find_gameobject_index_by_id(self, gameobject_id : int):
         index = extra.search(self._gameobjects, gameobject_id, gameobject_id_less_then, gameobject_id_greater_then)
         error = NO_ERROR
-        if id(self._gameobjects[index]) == gameobject_id:
+        if id(self._gameobjects[index]) != gameobject_id:
             error = ITEM_NOT_FOUND
         return index, error     
 
