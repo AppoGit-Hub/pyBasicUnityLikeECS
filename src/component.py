@@ -3,7 +3,7 @@ class Component:
     def __init__(self):
         self.gameobject_id = 0
 
-    def get_default():
+    def get_default(self):
         raise Exception("No default function implemented")
 
     def awake(self):
