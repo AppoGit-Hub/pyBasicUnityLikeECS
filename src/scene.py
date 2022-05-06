@@ -8,22 +8,27 @@ class Scene:
         self.space : pymunk.Space = space
 
     def awake(self):
+        self._known.awake()
         for gameobject in self._gameobjects:
             gameobject.awake()
 
     def start(self):
+        self._known.start()
         for gameobject in self._gameobjects:
             gameobject.start()
 
     def update(self, delta_time, *args):
+        self._known.update(delta_time, *args)
         for gameobject in self._gameobjects:
             gameobject.update(delta_time, *args)
 
     def on_event(self, delta_time, event):
+        self._known.on_event(delta_time, event)
         for gameobject in self._gameobjects:
             gameobject.on_event(delta_time, event)
 
     def on_key_pressed(self, delta_time, on_key_pressed):
+        self._known.on_key_pressed(delta_time, on_key_pressed)
         for gameobject in self._gameobjects:
             gameobject.on_key_pressed(delta_time, on_key_pressed)    
 

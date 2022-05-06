@@ -49,6 +49,14 @@ class SceneManager:
             raise Exception(f"component {component_type} doesnt exist on known in scene {current_scene}")
         return component
 
+    def add_gameobject_current_scene(gameobject : GameObject):
+        current_scene : Scene = SceneManager._current_loaded_scene
+        current_scene.add_gameobject(gameobject)        
+
+    def remove_gameobejct_current_scene(gameobject : GameObject):
+        current_scene : Scene = SceneManager._current_loaded_scene
+        current_scene.remove_gameobject(gameobject)
+    
     def _find_scene_index(scene : Scene):
         index = extra.search(SceneManager._all_scenes, scene, scene_less_then, scene_greater_then)
         error = NO_ERROR
@@ -58,8 +66,6 @@ class SceneManager:
 
     def set_current_scene(scene : Scene):
         SceneManager._current_loaded_scene = scene
-        scene.awake()
-        scene.start()
 
     def add_current_scene(scene : Scene):
         SceneManager._all_scenes.append(scene)
