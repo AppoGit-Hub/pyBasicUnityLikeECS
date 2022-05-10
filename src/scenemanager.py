@@ -56,13 +56,6 @@ class SceneManager:
     def remove_gameobejct_current_scene(gameobject : GameObject):
         current_scene : Scene = SceneManager._current_loaded_scene
         current_scene.remove_gameobject(gameobject)
-    
-    def _find_scene_index(scene : Scene):
-        index = extra.search(SceneManager._all_scenes, scene, scene_less_then, scene_greater_then)
-        error = NO_ERROR
-        if index < len(SceneManager._all_scenes) and SceneManager._all_scenes[index] == scene:
-            error = ITEM_NOT_FOUND    
-        return index, error
 
     def set_current_scene(scene : Scene):
         SceneManager._current_loaded_scene = scene
