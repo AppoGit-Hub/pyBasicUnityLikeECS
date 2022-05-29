@@ -23,9 +23,3 @@ class Component:
 
     def __repr__(self) -> str:
         return type(self).__name__
-
-def component_less_then(component_instance, component_type):
-    return type(component_instance).__name__ < component_type.__name__
-
-def component_greater_then(component_instance, component_type):
-    return type(component_instance).__name__ > component_type.__name__

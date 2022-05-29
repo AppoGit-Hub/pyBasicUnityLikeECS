@@ -17,15 +17,15 @@ class Scene:
         for id, gameobject in self._gameobjects.items():
             gameobject.start()
 
-    def update(self, delta_time, *args):
+    def update(self, delta_time, *args, **kargs):
         self._known.update(delta_time, *args)
         for id, gameobject in self._gameobjects.items():
-            gameobject.update(delta_time, *args)
+            gameobject.update(delta_time, *args, **kargs)
 
-    def on_event(self, delta_time, event):
-        self._known.on_event(delta_time, event)
+    def on_event(self, delta_time, event, *args, **kargs):
+        self._known.on_event(delta_time, event, *args, **kargs)
         for id, gameobject in self._gameobjects.items():
-            gameobject.on_event(delta_time, event)
+            gameobject.on_event(delta_time, event, *args, **kargs)
 
     def on_key_pressed(self, delta_time, on_key_pressed):
         self._known.on_key_pressed(delta_time, on_key_pressed)
