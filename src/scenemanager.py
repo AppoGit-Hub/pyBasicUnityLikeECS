@@ -1,4 +1,4 @@
-from src.scene import *
+from scene import *
 
 class SceneManager:
     _current_loaded_scene : Scene = None
@@ -51,11 +51,23 @@ class SceneManager:
 
     def add_gameobject_current_scene(gameobject : GameObject):
         current_scene : Scene = SceneManager._current_loaded_scene
-        current_scene.add_gameobject(gameobject)        
+        current_scene.add_gameobject(gameobject)
 
-    def remove_gameobejct_current_scene(gameobject : GameObject):
+    def remove_gameobject_by_id_current_scene(gameobject_id : int):
         current_scene : Scene = SceneManager._current_loaded_scene
-        current_scene.remove_gameobject(gameobject)
+        removed = current_scene.remove_gameobject_by_id(gameobject_id)
+        if not removed:
+            raise Exception(f"couldnt remove gameobject of id {gameobject_id} in scene {current_scene}")    
+
+    def remove_gameobject_current_scene(gameobject : GameObject):
+        SceneManager.remove_gameobject_by_id_current_scene(id(gameobject))
+
+    def get_gameobject_current_scene(gameobject_id : int):
+        current_scene : Scene = SceneManager._current_loaded_scene
+        gameobject, error = current_scene.find_gameobject_by_id(gameobject_id)
+        if error == ITEM_NOT_FOUND:
+            raise Exception(f"couldnt fin gamobject of id {gameobject_id} in scene {current_scene}")
+        return gameobject
 
     def set_current_scene(scene : Scene):
         SceneManager._current_loaded_scene = scene

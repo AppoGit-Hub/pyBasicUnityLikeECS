@@ -1,11 +1,17 @@
-from src.component import *
-from src.constant import *
+from component import *
+from constant import *
 
 class GameObject:
     def __init__(self, components_instances):
         self._components : dict = {}
         for component in components_instances:
             self.add_component(component)
+
+    def copy(self):
+        components_copy : list[Component] = []
+        for type, component in self._components.items():
+            components_copy.append(component.copy())
+        return GameObject(components_copy)
 
     def awake(self):
         for type, component in self._components.items():
@@ -31,12 +37,9 @@ class GameObject:
         self._components.update({type(component_instance) : component_instance})
         component_instance.gameobject_id = id(self)
 
-    def get_component(self, component_type : Component):
+    def get_component(self, component_type : Component) -> tuple[Component, int]:
         component_instance = self._components.get(component_type, ITEM_NOT_FOUND)
-        if (component_instance == ITEM_NOT_FOUND):
-            return component_instance, ITEM_NOT_FOUND
-        else:
-            return component_instance, NO_ERROR
+        return component_instance, component_instance
 
     def has_component(self, component_type : Component) -> bool:
         component_instance, error = self.get_component(component_type)
@@ -53,9 +56,11 @@ class GameObject:
         if error == NO_ERROR:
             self._components.pop(type(component_instance))
         return error
-
+        
+    """
     def __repr__(self) -> str:
         text = f"{id(self)}:"
         for component in self._components:
             text += str(component) + "-"
         return text
+    """

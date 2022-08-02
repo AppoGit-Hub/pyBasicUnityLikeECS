@@ -6,6 +6,9 @@ class Component:
     def get_default(self):
         raise Exception("No default function implemented")
 
+    def copy(self):
+        return Component()
+
     def awake(self):
         pass
 
@@ -20,6 +23,3 @@ class Component:
 
     def on_key_pressed(self, delta_time, on_key_pressed):
         pass
-
-    def __repr__(self) -> str:
-        return type(self).__name__
