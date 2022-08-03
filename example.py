@@ -1,8 +1,7 @@
-import pymunk
-from src.component import Component
-from src.gameobject import GameObject
-from src.scene import Scene
-from src.scenemanager import SceneManager
+from pybasicunitylikeecs.component import Component
+from pybasicunitylikeecs.scenemanager import SceneManager
+from pybasicunitylikeecs.scene import Scene
+from pybasicunitylikeecs.gameobject import GameObject
 
 class Vector(Component):
     def __init__(self, x, y):
@@ -31,7 +30,7 @@ class Mover(Component):
 
 object = GameObject([Vector(10, 5), Mover()])
 
-mainScene = Scene(pymunk.Space())
+mainScene = Scene()
 mainScene.add_gameobject(object)
 SceneManager.add_current_scene(mainScene)
 SceneManager.set_current_scene(mainScene)
